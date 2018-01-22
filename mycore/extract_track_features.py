@@ -100,7 +100,7 @@ def get_boxes_from_image(image, boxes):
     return image_data
 
 
-def extract_features(exp, startf=0, endf=100000, vis=True, fps=20.0):
+def extract_features(exp, startf=0, endf=100000, vis=False, fps=20.0):
     video_file = "demo/" + exp + ".mp4"
     person_track_file = 'demo/' + exp + '_person.txt'
     bin_track_file = 'demo/' + exp + '_bin.txt'
@@ -134,7 +134,7 @@ def extract_features(exp, startf=0, endf=100000, vis=True, fps=20.0):
     while True:
         flag, frame = capture.read()
         if frame is not None:
-            np.swapaxes(frame, 0, 2)
+            frame = frame[:,:,::-1]
             image = Image.fromarray(frame)
             i += 1
         else: break
@@ -179,7 +179,7 @@ def extract_features(exp, startf=0, endf=100000, vis=True, fps=20.0):
                 curr_bin_boxes[:,1],
                 'bin')
 
-            np.swapaxes(image_np, 0, 2)
+            image_np = image_np[:,:,::-1]
             out.write(image_np)
         print('%d frames processed!' % (i - startf + 1))
 
