@@ -6,14 +6,13 @@ from mycore import association as asc
 import sys
 
 
-def run(exp, startf, fps=20.0, vis=False):
-    #dt.detection(exp, startf=startf, fps=fps)
-    #tk.
-    #ex.extract_features(exp, startf=startf, fps=fps)
+def run(exp, startf, fps=20.0):
+    dt.detection(exp, startf=startf, fps=fps)
+    tk.tracking(exp, 'person')
+    tk.tracking(exp, 'bin')
+    ex.extract_features(exp, startf=startf, fps=fps)
     asc.associate(exp, startf=startf, fps=35)
-    #cl.classification(exp, startf=startf, fps=fps)
 
 if __name__ == "__main__":
     e = sys.argv[1]
-    s = int(sys.argv[2])
-    run(exp=e, startf=s)
+    run(exp=e, startf=0)
