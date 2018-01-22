@@ -38,7 +38,8 @@ def detection(exp, startf=0, endf=100000, THR=0.85, vis=True, fps=20.0):
     capture.set(1, startf)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter('./demo/' + exp + '_FRCNN_DET.avi', fourcc, fps, (1920, 1080))
-    otxt = open('./demo/' + exp + '_FRCNN_DET.txt', 'w')
+    #otxt = open('./demo/' + exp + '_FRCNN_DET.txt', 'w')
+    onpy = './demo/' + exp + '_FRCNN_DET.npy'
 
     detection_graph = tf.Graph()
     with detection_graph.as_default():
@@ -54,10 +55,13 @@ def detection(exp, startf=0, endf=100000, THR=0.85, vis=True, fps=20.0):
     categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
     category_index = label_map_util.create_category_index(categories)
 
+    detection_results = []
+
     i = startf-1
     while True:
         flag, frame = capture.read()
         if frame is not None:
+            np.swapaxes(frame, 0, 2)
             image = Image.fromarray(frame)
             i += 1
         else:
@@ -65,6 +69,7 @@ def detection(exp, startf=0, endf=100000, THR=0.85, vis=True, fps=20.0):
         if i > endf:
             break
         with detection_graph.as_default():
+            box_features = detection_graph.get_tensor_by_name('SecondStageFeatureExtractor/resnet_v1_101/block4/unit_3/bottleneck_v1/Relu:0')
             # Definite input and output Tensors for detection_graph
             image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
             # Each box represents a part of the image where a particular object was detected.
@@ -81,9 +86,11 @@ def detection(exp, startf=0, endf=100000, THR=0.85, vis=True, fps=20.0):
             batch_image_np, bsize = load_images_into_numpy_array([image])
 
             # Actual detection.
-            (boxes, scores, classes, num) = sess_det.run(
-              [detection_boxes, detection_scores, detection_classes, num_detections],
+            (boxes, scores, classes, num, features) = sess_det.run(
+              [detection_boxes, detection_scores, detection_classes, num_detections, box_features],
               feed_dict={image_tensor: batch_image_np})
+
+            features = np.expand_dims(np.mean(features, axis=(1,2)), axis=0)
 
             if vis:
                 image_np = vis_util.visualize_boxes_and_labels_on_image_array(
@@ -95,14 +102,22 @@ def detection(exp, startf=0, endf=100000, THR=0.85, vis=True, fps=20.0):
                   use_normalized_coordinates=True,
                   min_score_thresh=THR,
                   line_thickness=8)
+                np.swapaxes(image_np, 0, 2)
                 out.write(image_np)
 
-            boxes, scores, classes = boxes[scores > THR], scores[scores > THR], classes[scores > THR]
+            boxes, scores, classes, features = boxes[scores > THR], scores[scores > THR], classes[scores > THR], features[scores > THR]
 
             for k in range(len(scores)):
-                otxt.write('%d,%d,%.3f,%.3f,%.3f,%.3f,%.2f\n' % (i, classes[k], boxes[k][0], boxes[k][1],
-                                                          boxes[k][2], boxes[k][3], scores[k]))
+                current_result = np.zeros(shape=(2055))
+                current_result[0] = i
+                current_result[1] = classes[k]
+                current_result[2:6] = boxes[k][0:4]
+                current_result[6] = scores[k]
+                current_result[7:] = features[k]
+                detection_results.append(current_result)
+                #otxt.write('%d,%d,%.3f,%.3f,%.3f,%.3f,%.2f, %s\n' % (i, classes[k], boxes[k][0], boxes[k][1],
+                #                                          boxes[k][2], boxes[k][3], scores[k], ",".join(['%f' % w for w in features[k]])))
 
             print('%d frames processed!' % (i-startf+1))
 
-    otxt.close()
+    np.save(onpy, np.array(detection_results))
