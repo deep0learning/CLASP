@@ -61,7 +61,7 @@ def detection(exp, startf=0, endf=100000, THR=0.85, vis=True, fps=20.0):
     while True:
         flag, frame = capture.read()
         if frame is not None:
-            np.swapaxes(frame, 0, 2)
+            frame = frame[:,:,::-1]
             image = Image.fromarray(frame)
             i += 1
         else:
@@ -102,7 +102,7 @@ def detection(exp, startf=0, endf=100000, THR=0.85, vis=True, fps=20.0):
                   use_normalized_coordinates=True,
                   min_score_thresh=THR,
                   line_thickness=8)
-                np.swapaxes(image_np, 0, 2)
+                image_np = image_np[:,:,::-1]
                 out.write(image_np)
 
             boxes, scores, classes, features = boxes[scores > THR], scores[scores > THR], classes[scores > THR], features[scores > THR]

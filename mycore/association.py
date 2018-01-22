@@ -127,7 +127,8 @@ def associate(exp, startf=0, endf=100000, vis=True, fps=20.0):
         while True:
             flag, frame = capture.read()
             if frame is not None:
-                np.swapaxes(frame, 0, 2)
+                pdb.set_trace()
+                frame = frame[:,:,::-1]
                 image = Image.fromarray(frame)
                 i += 1
             else: break
@@ -151,7 +152,7 @@ def associate(exp, startf=0, endf=100000, vis=True, fps=20.0):
                 bin_ass,
                 'bin')
 
-            np.swapaxes(image_np, 0, 2)
+            image_np = image_np[:,:,::-1]
             out.write(image_np)
             print('%d frames processed!' % (i - startf + 1))
   
