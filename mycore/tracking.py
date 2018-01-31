@@ -287,8 +287,8 @@ def tracking(exp, clss):
     min_confidence = 0.8
     nms_max_overlap = 1.0
     min_detection_height = 0
-    max_cosine_distance = 0.1
-    nn_budget=None
+    max_cosine_distance = 0.2
+    nn_budget=30
     display=False
     run(
         sequence_dir, detection_file, output_file,

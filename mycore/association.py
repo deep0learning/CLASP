@@ -33,7 +33,7 @@ def write_tracks_on_image(image, box, id, ass, clss):
         for i in np.unique(ass):
             subarray = np.where(ass == i)
             cass[subarray[0]] = range(len(subarray[0]))       
-        display_str = 'person %d, bin %d '%(ass[int(id)], cass[int(id)] + 1)
+        display_str = 'person %d, bin %d '%(ass[int(id)] + 1, cass[int(id)] + 1)
     draw = ImageDraw.Draw(image)
 
     (left, right, top, bottom) = (box[0], box[0]+box[2], box[1], box[1]+box[3])
@@ -127,7 +127,7 @@ def associate(exp, startf=0, endf=100000, vis=True, fps=20.0):
         while True:
             flag, frame = capture.read()
             if frame is not None:
-                pdb.set_trace()
+                #pdb.set_trace()
                 frame = frame[:,:,::-1]
                 image = Image.fromarray(frame)
                 i += 1

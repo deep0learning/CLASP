@@ -8,10 +8,10 @@ import sys
 
 def run(exp, startf, fps=20.0):
     #dt.detection(exp, startf=startf, fps=fps, vis=False)
-    #tk.tracking(exp, 'person')
-    #tk.tracking(exp, 'bin')
+    tk.tracking(exp, 'person')
+    tk.tracking(exp, 'bin')
+    asc.associate(exp, startf=startf, fps=45)
     #ex.extract_features(exp, startf=startf, fps=fps)
-    asc.associate(exp, startf=startf, fps=35)
 
 if __name__ == "__main__":
     e = sys.argv[1]
