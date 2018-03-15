@@ -88,11 +88,12 @@ def location_matching(person_boxes, bin_boxes):
             maxb = max(curr_bin_boxes[:,0])
             if min(maxp, maxb) > max(minp, minb):
                 acc = 0
+                acc_d = 0
                 for fr in range(int(max(minp, minb)), int(min(maxp, maxb))):
                     xy_p = curr_person_boxes[curr_person_boxes[:,0]==fr, 2:4] + curr_person_boxes[curr_person_boxes[:,0]==fr, 4:6]
                     xy_b = curr_bin_boxes[curr_bin_boxes[:,0]==fr, 2:4] + curr_bin_boxes[curr_bin_boxes[:,0]==fr, 4:6]
                     if xy_p.size > 0 and xy_b.size > 0:
-                        acc_d = np.linalg.norm(xy_p - xy_b)
+                        acc_d += np.linalg.norm(xy_p - xy_b)
                         acc += 1
                 if acc > 0:
                     avg_d = acc_d / acc

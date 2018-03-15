@@ -21,73 +21,6 @@ PATH_TO_CKPT = 'model/alert/frozen_inference_graph.pb'
 PATH_TO_CKPT_CLS = 'model/imagenet/classify_image_graph_def.pb'
 NUM_CLASSES = 2
 
-_TITLE_LEFT_MARGIN = 10
-_TITLE_TOP_MARGIN = 10
-STANDARD_COLORS = [
-    'AliceBlue', 'Chartreuse', 'Aqua', 'Aquamarine', 'Azure', 'Beige', 'Bisque',
-    'BlanchedAlmond', 'BlueViolet', 'BurlyWood', 'CadetBlue', 'AntiqueWhite',
-    'Chocolate', 'Coral', 'CornflowerBlue', 'Cornsilk', 'Crimson', 'Cyan',
-    'DarkCyan', 'DarkGoldenRod', 'DarkGrey', 'DarkKhaki', 'DarkOrange',
-    'DarkOrchid', 'DarkSalmon', 'DarkSeaGreen', 'DarkTurquoise', 'DarkViolet',
-    'DeepPink', 'DeepSkyBlue', 'DodgerBlue', 'FireBrick', 'FloralWhite',
-    'ForestGreen', 'Fuchsia', 'Gainsboro', 'GhostWhite', 'Gold', 'GoldenRod',
-    'Salmon', 'Tan', 'HoneyDew', 'HotPink', 'IndianRed', 'Ivory', 'Khaki',
-    'Lavender', 'LavenderBlush', 'LawnGreen', 'LemonChiffon', 'LightBlue',
-    'LightCoral', 'LightCyan', 'LightGoldenRodYellow', 'LightGray', 'LightGrey',
-    'LightGreen', 'LightPink', 'LightSalmon', 'LightSeaGreen', 'LightSkyBlue',
-    'LightSlateGray', 'LightSlateGrey', 'LightSteelBlue', 'LightYellow', 'Lime',
-    'LimeGreen', 'Linen', 'Magenta', 'MediumAquaMarine', 'MediumOrchid',
-    'MediumPurple', 'MediumSeaGreen', 'MediumSlateBlue', 'MediumSpringGreen',
-    'MediumTurquoise', 'MediumVioletRed', 'MintCream', 'MistyRose', 'Moccasin',
-    'NavajoWhite', 'OldLace', 'Olive', 'OliveDrab', 'Orange', 'OrangeRed',
-    'Orchid', 'PaleGoldenRod', 'PaleGreen', 'PaleTurquoise', 'PaleVioletRed',
-    'PapayaWhip', 'PeachPuff', 'Peru', 'Pink', 'Plum', 'PowderBlue', 'Purple',
-    'Red', 'RosyBrown', 'RoyalBlue', 'SaddleBrown', 'Green', 'SandyBrown',
-    'SeaGreen', 'SeaShell', 'Sienna', 'Silver', 'SkyBlue', 'SlateBlue',
-    'SlateGray', 'SlateGrey', 'Snow', 'SpringGreen', 'SteelBlue', 'GreenYellow',
-    'Teal', 'Thistle', 'Tomato', 'Turquoise', 'Violet', 'Wheat', 'White',
-    'WhiteSmoke', 'Yellow', 'YellowGreen'
-]
-
-def write_tracks_on_image_array(image_pil, boxes, ids, clss):
-    for box, i in zip(boxes, ids):
-        write_tracks_on_image(image_pil, box, i, clss)
-    image = np.array(image_pil)
-    return image
-
-def write_tracks_on_image(image, box, id, clss):
-    txtcolor = 'red'
-    if clss == 'person':
-        boxcolor = 'blue'
-    else:
-        boxcolor = 'green'    
-    draw = ImageDraw.Draw(image)
-
-    (left, right, top, bottom) = (box[0], box[0]+box[2], box[1], box[1]+box[3])
-    try:
-        font = ImageFont.truetype('demo/arial.ttf', 30)
-    except IOError:
-        font = ImageFont.load_default()
-
-    display_str = clss + ' ' + str(int(id))
-    text_width, text_height = font.getsize(display_str + '  ')
-    margin = np.ceil(0.5 * text_height)
-
-    text_bottom = top + text_height + 2*margin
-    
-    draw.rectangle(
-         [(left, text_bottom - text_height - 2 * margin), (left + text_width,
-                                                           text_bottom)],
-         fill='white')
-
-    draw.line([(left, top), (left, bottom), (right, bottom),
-             (right, top), (left, top)], width=4, fill=boxcolor)
-    draw.text(
-        (left + margin, text_bottom - text_height - margin),
-        display_str,
-        fill=txtcolor,
-        font=font)
-
 def get_boxes_from_image(image, boxes):
     image_data = []
     h, w, _ = image.shape
@@ -165,22 +98,6 @@ def extract_features(exp, startf=0, endf=100000, vis=False, fps=20.0):
                     curr_bin_feature = np.squeeze(curr_bin_feature)
                     bin_features.append(np.concatenate([box.astype(np.float32), curr_bin_feature]))
             
-
-        if vis:
-            image_np = write_tracks_on_image_array(
-                image,
-                curr_person_boxes[:,2:],
-                curr_person_boxes[:,1],
-                'person')
-
-            image_np = write_tracks_on_image_array(
-                image,
-                curr_bin_boxes[:,2:],
-                curr_bin_boxes[:,1],
-                'bin')
-
-            image_np = image_np[:,:,::-1]
-            out.write(image_np)
         print('%d frames processed!' % (i - startf + 1))
 
 

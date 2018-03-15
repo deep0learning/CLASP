@@ -218,6 +218,13 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
     # Post-process results.
     results_array = np.array(results)
     track_idxs = results_array[:, 1]
+    unique, counts = np.unique(track_idxs, return_counts=True)
+    #pdb.set_trace()
+    for u, c in zip(unique, counts):
+        if c < 200:
+            results_array = results_array[track_idxs!=u]
+            track_idxs = track_idxs[track_idxs!=u]
+
     foo, unique_idxs = np.unique(track_idxs, return_inverse=True)
     results_array[:,1] = unique_idxs
     results_processed = results_array.tolist()
