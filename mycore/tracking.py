@@ -288,14 +288,14 @@ if __name__ == "__main__":
         args.max_cosine_distance, args.nn_budget, args.display, args.clss)
 
 def tracking(exp, clss):
-    sequence_dir = './demo/%s.mp4' % exp
-    detection_file = './demo/%s_FRCNN_DET.npy' % exp
-    output_file = './demo/%s' % exp
-    min_confidence = 0.8
-    nms_max_overlap = 1.0
+    sequence_dir = './result/original/%s.mp4' % exp
+    detection_file = './result/detection/%s_FRCNN_DET.npy' % exp
+    output_file = './result/tracking/%s' % exp
+    min_confidence = 0.5
+    nms_max_overlap = 0.8
     min_detection_height = 0
-    max_cosine_distance = 0.2
-    nn_budget=30
+    max_cosine_distance = 0.5
+    nn_budget=50
     display=False
     run(
         sequence_dir, detection_file, output_file,

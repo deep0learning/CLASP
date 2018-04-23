@@ -8,18 +8,12 @@ import numpy as np
 import PIL.Image as Image
 
 import sys
-sys.path.insert(0, "/project/google-surv/alert/models/research/object_detection")
+sys.path.insert(0, "/home/hxw/frameworks/models/research/object_detection")
 from utils import label_map_util
 from utils import visualization_utils as vis_util
 
 import pdb
 
-# Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_CKPT = 'model/alert/frozen_inference_graph.pb'
-PATH_TO_CKPT_CLS = 'model/imagenet/classify_image_graph_def.pb'
-# List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = 'data/alert/alert_label_map.pbtxt'
-NUM_CLASSES = 2
 
 def load_images_into_numpy_array(images):
     (im_width, im_height) = images[0].size
@@ -31,24 +25,25 @@ def load_images_into_numpy_array(images):
     return images_np, len(images)
 
 
-def detection(exp, dtype='perbin', startf=0, endf=100000, THR=0.85, vis=True, fps=20.0):
-    video_file = "demo/" + exp + ".mp4"
+def detection(exp, dtype='perbin', startf=0, endf=100000, THR=0.70, vis=True, fps=40.0):
+    video_file = "result/original/" + exp + ".mp4"
     capture = cv2.VideoCapture(video_file)
     capture.set(1, startf)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    onpy = './demo/' + exp + '_FRCNN_DET.npy'
+
+    if vis:
+        out = cv2.VideoWriter('./result/detection/' + exp + '_FRCNN_DET.avi', fourcc, fps, (1920, 1080))
 
     if dtype == 'hand':
-        PATH_TO_CKPT = 'model/alert/hand/frozen_inference_graph.pb'
-        #PATH_TO_CKPT = '/project/google-surv/alert/models/research/object_detection/hands_log/saved_graph/output_inference_graph/frozen_inference_graph.pb'
+        PATH_TO_CKPT = 'model/hand/frozen_inference_graph.pb'
         PATH_TO_LABELS = 'data/alert/hands_label_map.pbtxt'
-        onpy = './demo/' + exp + '_FRCNN_DET__hand.npy'
+        onpy = './result/detection/' + exp + '_FRCNN_DET_hand.npy'
         NUM_CLASSES = 1
     else:
-        PATH_TO_CKPT = 'model/alert/frozen_inference_graph.pb'
-        PATH_TO_CKPT_CLS = 'model/imagenet/classify_image_graph_def.pb'
+        PATH_TO_CKPT = 'model/alertv2/frozen_inference_graph.pb'
         # List of the strings that is used to add correct label for each box.
-        PATH_TO_LABELS = 'data/alert/alert_label_map.pbtxt'
+        PATH_TO_LABELS = 'data/alertv2/alertv2_label_map.pbtxt'
+        onpy = './result/detection/' + exp + '_FRCNN_DET.npy'
         NUM_CLASSES = 2
 
     detection_graph = tf.Graph()
@@ -110,7 +105,6 @@ def detection(exp, dtype='perbin', startf=0, endf=100000, THR=0.85, vis=True, fp
             features = np.expand_dims(np.mean(features, axis=(1,2)), axis=0)
 
             if vis:
-                out = cv2.VideoWriter('./demo/' + exp + '_FRCNN_DET.mp4', fourcc, fps, (1920, 1080))
                 image_np = vis_util.visualize_boxes_and_labels_on_image_array(
                   np.squeeze(batch_image_np),
                   np.squeeze(boxes),

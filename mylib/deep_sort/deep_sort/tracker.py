@@ -37,7 +37,7 @@ class Tracker:
 
     """
 
-    def __init__(self, metric, max_iou_distance=0.5, max_age=30, n_init=30):
+    def __init__(self, metric, max_iou_distance=0.8, max_age=50, n_init=10):
         self.metric = metric
         self.max_iou_distance = max_iou_distance
         self.max_age = max_age
