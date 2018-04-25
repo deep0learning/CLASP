@@ -10,10 +10,11 @@ import argparse
 
 def run(args):
     #dt.detection(exp=args.exp, dtype=args.dtype, startf=args.startf, vis=args.vis)
+    #dt.detection(exp=args.exp, dtype='hand', startf=args.startf, vis=False)
     #tk.tracking(args.exp, 'person')
     #tk.tracking(args.exp, 'bin')
-    ex.extract_features(args.exp)
-    #asc.associate(exp, startf=startf, fps=45)
+    #ex.extract_features(args.exp)
+    #asc.associate(args.exp, startf=args.startf, fps=45)
     
 
 def parse_args():
@@ -31,7 +32,7 @@ def parse_args():
 	    default="perbin", required=False)
     parser.add_argument(
 	    "--vis", help="Start frame",
-	    default=False, required=True)
+	    default=True, required=True)
 
     return parser.parse_args()
 

@@ -7,7 +7,7 @@ import pdb
 import tensorflow as tf
 from skimage.transform import resize
 import sys
-sys.path.insert(0, "/project/google-surv/alert/models/research/object_detection")
+sys.path.insert(0, "/home/hxw/frameworks/models/research/object_detection")
 from utils import visualization_utils as vis_util
 import numpy as np
 import PIL.Image as Image
@@ -170,24 +170,24 @@ def location_matching(person_boxes, bin_boxes):
     return dist_mat    
 
 def associate(exp, startf=0, endf=100000, vis=True, fps=20.0):
-    video_file = "demo/" + exp + ".mp4"
-    person_track_file = 'demo/' + exp + '_person.txt'
-    bin_track_file = 'demo/' + exp + '_bin.txt'
-    hand_track_file = 'demo/' + exp + '_hand.txt'
+    video_file = "result/original/" + exp + ".mp4"
+    person_track_file = 'result/tracking/' + exp + '_person.txt'
+    bin_track_file = 'result/tracking/' + exp + '_bin.txt'
+    #hand_track_file = 'demo/' + exp + '_hand.txt'
 
     person_boxes = np.loadtxt(person_track_file, delimiter=',')
     bin_boxes = np.loadtxt(bin_track_file, delimiter=',')
-    hand_boxes = np.loadtxt(hand_track_file, delimiter=',')
+    #hand_boxes = np.loadtxt(hand_track_file, delimiter=',')
         
 
     location_dist = location_matching(person_boxes, bin_boxes) 
     bin_ass = np.argmin(location_dist, axis=0)
-    sim_mat = hand_matching(hand_boxes, person_boxes, bin_boxes)
+    # sim_mat = hand_matching(hand_boxes, person_boxes, bin_boxes)
 
-    for b in sim_mat.keys():
-        bin_ass[b] = sim_mat[b]
+    # for b in sim_mat.keys():
+    #     bin_ass[b] = sim_mat[b]
         
-    out_text = './demo/' + exp + '_association_person.txt'
+    out_text = './result/associate/' + exp + '_association_person.txt'
     f = open(out_text, 'w')
     tmp = [str(x) for x in bin_ass]
     print(', '.join(tmp),file=f)
@@ -200,7 +200,7 @@ def associate(exp, startf=0, endf=100000, vis=True, fps=20.0):
     #i = 55
     
     if vis:
-        out = cv2.VideoWriter('./demo/' + exp + '_SORT_Tracking.mp4', fourcc, fps, (1920, 1080))
+        out = cv2.VideoWriter('./result/associate/' + exp + '_SORT_Tracking.avi', fourcc, fps, (1920, 1080))
         while True:
             flag, frame = capture.read()
             if frame is not None:
@@ -212,7 +212,7 @@ def associate(exp, startf=0, endf=100000, vis=True, fps=20.0):
 
             curr_person_boxes = person_boxes[person_boxes[:,0] == i]
             curr_bin_boxes    = bin_boxes[bin_boxes[:,0] == i]
-            curr_hand_boxes    = hand_boxes[hand_boxes[:,0] == i]
+            #curr_hand_boxes    = hand_boxes[hand_boxes[:,0] == i]
 
             image_np = write_tracks_on_image_array(
                 image,
@@ -228,12 +228,12 @@ def associate(exp, startf=0, endf=100000, vis=True, fps=20.0):
                 bin_ass,
                 'bin')
                 
-            image_np = write_tracks_on_image_array(
-                image,
-                curr_hand_boxes[:,2:],
-                curr_hand_boxes[:,1],
-                bin_ass,
-                'hand')
+            # image_np = write_tracks_on_image_array(
+            #     image,
+            #     curr_hand_boxes[:,2:],
+            #     curr_hand_boxes[:,1],
+            #     bin_ass,
+            #     'hand')
 
             image_np = image_np[:,:,::-1]
             out.write(image_np)

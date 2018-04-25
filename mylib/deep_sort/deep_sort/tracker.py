@@ -37,7 +37,7 @@ class Tracker:
 
     """
 
-    def __init__(self, metric, max_iou_distance=0.8, max_age=50, n_init=10):
+    def __init__(self, metric, max_iou_distance=0.7, max_age=100, n_init=5):
         self.metric = metric
         self.max_iou_distance = max_iou_distance
         self.max_age = max_age
@@ -83,7 +83,7 @@ class Tracker:
         features, targets = [], []
         for track in self.tracks:
             if not track.is_confirmed():
-                continue
+                continue   
             features += track.features
             targets += [track.track_id for _ in track.features]
             track.features = []

@@ -25,25 +25,25 @@ def load_images_into_numpy_array(images):
     return images_np, len(images)
 
 
-def detection(exp, dtype='perbin', startf=0, endf=100000, THR=0.70, vis=True, fps=40.0):
+def detection(exp, dtype='perbin', startf=0, endf=100000, THR=0.50, vis=True, fps=40.0):
     video_file = "result/original/" + exp + ".mp4"
     capture = cv2.VideoCapture(video_file)
     capture.set(1, startf)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
 
     if vis:
-        out = cv2.VideoWriter('./result/detection/' + exp + '_FRCNN_DET.avi', fourcc, fps, (1920, 1080))
+        out = cv2.VideoWriter('./result/detection/' + exp + '_FRCNN_DET_100000.avi', fourcc, fps, (1920, 1080))
 
     if dtype == 'hand':
         PATH_TO_CKPT = 'model/hand/frozen_inference_graph.pb'
-        PATH_TO_LABELS = 'data/alert/hands_label_map.pbtxt'
+        PATH_TO_LABELS = 'data/alertv2/hands_label_map.pbtxt'
         onpy = './result/detection/' + exp + '_FRCNN_DET_hand.npy'
         NUM_CLASSES = 1
     else:
-        PATH_TO_CKPT = 'model/alertv2/frozen_inference_graph.pb'
+        PATH_TO_CKPT = 'model/alertv2_100000/frozen_inference_graph.pb'
         # List of the strings that is used to add correct label for each box.
         PATH_TO_LABELS = 'data/alertv2/alertv2_label_map.pbtxt'
-        onpy = './result/detection/' + exp + '_FRCNN_DET.npy'
+        onpy = './result/detection/' + exp + '_FRCNN_DET_100000.npy'
         NUM_CLASSES = 2
 
     detection_graph = tf.Graph()

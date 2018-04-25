@@ -128,7 +128,9 @@ def create_detections(detection_mat, frame_idx, image_size, clss, min_height=0):
         tclss, rbbox, confidence, feature = row[1], row[2:6], row[6], row[7:]
         bbox = box_transform(rbbox, image_size)
         if bbox[3] < min_height:
-            continue
+            continue    
+        if tclss == 1 and bbox[1] < 500:
+            continue    
         if tclss == interested_class:     
             detection_list.append(Detection(bbox, confidence, feature))
     return detection_list
@@ -289,14 +291,14 @@ if __name__ == "__main__":
 
 def tracking(exp, clss):
     sequence_dir = './result/original/%s.mp4' % exp
-    detection_file = './result/detection/%s_FRCNN_DET.npy' % exp
+    detection_file = './result/detection/%s_FRCNN_DET_100000.npy' % exp
     output_file = './result/tracking/%s' % exp
     min_confidence = 0.5
-    nms_max_overlap = 0.8
+    nms_max_overlap = 1.0
     min_detection_height = 0
-    max_cosine_distance = 0.5
-    nn_budget=50
-    display=False
+    max_cosine_distance = 0.4
+    nn_budget=None
+    display=True
     run(
         sequence_dir, detection_file, output_file,
         min_confidence, nms_max_overlap, min_detection_height,

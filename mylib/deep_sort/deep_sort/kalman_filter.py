@@ -50,7 +50,7 @@ class KalmanFilter(object):
         # Motion and observation uncertainty are chosen relative to the current
         # state estimate. These weights control the amount of uncertainty in
         # the model. This is a bit hacky.
-        self._std_weight_position = 1. / 30 #20
+        self._std_weight_position = 1. / 20 #20
         self._std_weight_velocity = 1. / 160 #160
 
     def initiate(self, measurement):
@@ -75,13 +75,13 @@ class KalmanFilter(object):
         mean = np.r_[mean_pos, mean_vel]
 
         std = [
-            2 * 1e-3 * self._std_weight_position * measurement[3],
-            2 * 1e-3 * self._std_weight_position * measurement[3],
-            1e-2,
-            2 * self._std_weight_position * measurement[3],
+            2  * self._std_weight_position * measurement[3],
+            2  * self._std_weight_position * measurement[3],
+            2  * self._std_weight_position * measurement[3],
+            2e-1  *self._std_weight_position * measurement[3],
             10 * self._std_weight_velocity * measurement[3],
             10 * self._std_weight_velocity * measurement[3],
-            1e-5,
+            10 * self._std_weight_velocity * measurement[3],
             10 * self._std_weight_velocity * measurement[3]]
         covariance = np.diag(np.square(std))
         return mean, covariance
@@ -106,14 +106,14 @@ class KalmanFilter(object):
 
         """
         std_pos = [
-            1e-3 * self._std_weight_position * mean[3],
-            1e-3 * self._std_weight_position * mean[3],
-            1e-2,
-            self._std_weight_position * mean[3]]
+            self._std_weight_position * mean[3],
+            self._std_weight_position * mean[3],
+            self._std_weight_position * mean[3],
+            1e-1*self._std_weight_position * mean[3]]
         std_vel = [
             self._std_weight_velocity * mean[3],
             self._std_weight_velocity * mean[3],
-            1e-5,
+            self._std_weight_velocity * mean[3],
             self._std_weight_velocity * mean[3]]
         motion_cov = np.diag(np.square(np.r_[std_pos, std_vel]))
 
@@ -217,7 +217,7 @@ class KalmanFilter(object):
 
         """
         mean, covariance = self.project(mean, covariance)
-        if only_position:
+        if True:
             mean, covariance = mean[:2], covariance[:2, :2]
             measurements = measurements[:, :2]
 
