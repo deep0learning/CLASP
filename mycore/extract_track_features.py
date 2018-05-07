@@ -5,6 +5,7 @@ import re
 import cv2
 import pdb
 import tensorflow as tf
+import argparse
 from skimage.transform import resize
 import sys
 sys.path.insert(0, "/home/hxw/frameworks/models/research/object_detection")
@@ -14,6 +15,7 @@ import PIL.Image as Image
 import PIL.ImageDraw as ImageDraw
 import PIL.ImageFont as ImageFont
 from itertools import compress
+import os.path
 
 
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
@@ -44,9 +46,16 @@ def extract_features(exp, startf=0, endf=100000, vis=False, fps=40.0):
     
     person_features_npy = './result/tracking/' + exp + '_features_person.npy'
     bin_features_npy = './result/tracking/' + exp + '_features_bin.npy'
+    
+    if os.path.isfile(person_track_file):
+        person_boxes = np.loadtxt(person_track_file, delimiter=',')
+    else:
+        person_boxes = np.array([])
 
-    person_boxes = np.loadtxt(person_track_file, delimiter=',')
-    bin_boxes = np.loadtxt(bin_track_file, delimiter=',')
+    if os.path.isfile(bin_track_file):    
+        bin_boxes = np.loadtxt(bin_track_file, delimiter=',')
+    else:
+        bin_boxes = np.array([])
     
 
     classification_graph = tf.Graph()
@@ -72,8 +81,14 @@ def extract_features(exp, startf=0, endf=100000, vis=False, fps=40.0):
         else: break
         if i > endf: break
         
-        curr_person_boxes = person_boxes[person_boxes[:,0] == i]
-        curr_bin_boxes    = bin_boxes[bin_boxes[:,0] == i]
+        if person_boxes.size > 0:
+            curr_person_boxes = person_boxes[person_boxes[:,0] == i]
+        else:
+            curr_person_boxes = np.array([])
+        if bin_boxes.size > 0:        
+            curr_bin_boxes    = bin_boxes[bin_boxes[:,0] == i]
+        else:
+            curr_bin_boxes    = np.array([])     
 
         if curr_person_boxes.size > 0:
             with classification_graph.as_default():
@@ -104,4 +119,19 @@ def extract_features(exp, startf=0, endf=100000, vis=False, fps=40.0):
 
 
     np.save(person_features_npy, np.array(person_features))
-    np.save(bin_features_npy, np.array(bin_features))   
+    np.save(bin_features_npy, np.array(bin_features))  
+
+def parse_args():
+    """ Parse command line arguments.
+    """
+    parser = argparse.ArgumentParser(description="Extract features")
+    parser.add_argument(
+        "--exp", help="Name of video file",
+        default=None, required=True)
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    extract_features(args.exp)
+ 

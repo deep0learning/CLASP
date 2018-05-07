@@ -39,11 +39,11 @@ class KalmanFilter(object):
     """
 
     def __init__(self):
-        ndim, dt = 4, 1.
+        ndim, dt = 4, 1e-1
 
         # Create Kalman filter model matrices.
         self._motion_mat = np.eye(2 * ndim, 2 * ndim)
-        for i in range(ndim):
+        for i in range(1):
             self._motion_mat[i, ndim + i] = dt
         self._update_mat = np.eye(ndim, 2 * ndim)
 
@@ -143,7 +143,7 @@ class KalmanFilter(object):
         std = [
             self._std_weight_position * mean[3],
             self._std_weight_position * mean[3],
-            1e-1,
+            1e2,
             self._std_weight_position * mean[3]]
         innovation_cov = np.diag(np.square(std))
 

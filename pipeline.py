@@ -9,12 +9,11 @@ import argparse
 
 
 def run(args):
-    #dt.detection(exp=args.exp, dtype=args.dtype, startf=args.startf, vis=args.vis)
-    #dt.detection(exp=args.exp, dtype='hand', startf=args.startf, vis=False)
-    #tk.tracking(args.exp, 'person')
-    #tk.tracking(args.exp, 'bin')
-    #ex.extract_features(args.exp)
-    #asc.associate(args.exp, startf=args.startf, fps=45)
+    # dt.detection(exp=args.exp, dtype=args.dtype, startf=args.startf, vis=args.vis)
+    # dt.detection(exp=args.exp, dtype='hand', startf=args.startf, vis=False)
+    tk.tracking(args.exp, 'person', args.vis=="True")
+    tk.tracking(args.exp, 'bin', args.vis=="True")
+    ex.extract_features(args.exp)
     
 
 def parse_args():

@@ -187,14 +187,17 @@ def gate_cost_matrix(
 
     for row, track_idx in enumerate(track_indices):
         track = tracks[track_idx]
+
         gating_distance = kf.gating_distance(
             track.mean, track.covariance, measurements, only_position)
+        #cost_matrix[row, :] *= gating_distance
+
         cost_matrix[row, gating_distance > gating_threshold] = gated_cost
         
-        # detection xs
-        detectionx_gate = measurements[:,0] - track.mean[0] > 150
+        # # detection xs
+        detectionx_gate = measurements[:,0] - track.mean[0] > 150 #150 for cam9
         cost_matrix[row, detectionx_gate] = gated_cost    
-
+        
         # # detection ys
         # detectiony_gate = measurements[:,1] < 500
         # cost_matrix[row, detectiony_gate] = gated_cost 

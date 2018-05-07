@@ -129,8 +129,8 @@ def create_detections(detection_mat, frame_idx, image_size, clss, min_height=0):
         bbox = box_transform(rbbox, image_size)
         if bbox[3] < min_height:
             continue    
-        if tclss == 1 and bbox[1] < 500:
-            continue    
+        # if tclss == 1 and bbox[1] < 500:
+        #     continue    
         if tclss == interested_class:     
             detection_list.append(Detection(bbox, confidence, feature))
     return detection_list
@@ -205,7 +205,7 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
 
         # Store results.
         for track in tracker.tracks:
-            if not track.is_confirmed() or track.time_since_update > 1:
+            if not track.is_confirmed() or track.time_since_update > 15:
                 continue
             bbox = track.to_tlwh()
             results.append([
@@ -222,10 +222,10 @@ def run(sequence_dir, detection_file, output_file, min_confidence,
     track_idxs = results_array[:, 1]
     unique, counts = np.unique(track_idxs, return_counts=True)
     #pdb.set_trace()
-    for u, c in zip(unique, counts):
-        if c < 200:
-            results_array = results_array[track_idxs!=u]
-            track_idxs = track_idxs[track_idxs!=u]
+    # for u, c in zip(unique, counts):
+    #     if c < 100:
+    #         results_array = results_array[track_idxs!=u]
+    #         track_idxs = track_idxs[track_idxs!=u]
 
     foo, unique_idxs = np.unique(track_idxs, return_inverse=True)
     results_array[:,1] = unique_idxs
@@ -247,19 +247,12 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(description="Deep SORT")
     parser.add_argument(
-        "--sequence_dir", help="Path to MOTChallenge sequence directory",
+        "--exp", help="exp name",
         default=None, required=True)
-    parser.add_argument(
-        "--detection_file", help="Path to custom detections.", default=None,
-        required=True)
-    parser.add_argument(
-        "--output_file", help="Path to the tracking output file. This file will"
-        " contain the tracking results on completion.",
-        default="/tmp/hypotheses.txt")
     parser.add_argument(
         "--min_confidence", help="Detection confidence threshold. Disregard "
         "all detections that have a confidence lower than this value.",
-        default=0.8, type=float)
+        default=0.7, type=float)
     parser.add_argument(
         "--min_detection_height", help="Threshold on the detection bounding "
         "box height. Detections with height smaller than this value are "
@@ -269,13 +262,13 @@ def parse_args():
         "detection overlap.", default=1.0, type=float)
     parser.add_argument(
         "--max_cosine_distance", help="Gating threshold for cosine distance "
-        "metric (object appearance).", type=float, default=0.1)
+        "metric (object appearance).", type=float, default=0.6)
     parser.add_argument(
         "--nn_budget", help="Maximum size of the appearance descriptors "
         "gallery. If None, no budget is enforced.", type=int, default=None)
     parser.add_argument(
         "--display", help="Show intermediate tracking results",
-        default=True, type=boolean_string)
+        default=False, type=boolean_string)
     parser.add_argument(
         "--clss", help="Object class to tracking (person/bin)",
         default='person', type=str)
@@ -284,21 +277,24 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
+    sequence_dir = './result/original/%s.mp4' % args.exp
+    detection_file = './result/detection/%s_FRCNN_DET_100000.npy' % args.exp
+    output_file = './result/tracking/%s' % args.exp
+
     run(
-        args.sequence_dir, args.detection_file, args.output_file,
+        sequence_dir, detection_file, output_file,
         args.min_confidence, args.nms_max_overlap, args.min_detection_height,
         args.max_cosine_distance, args.nn_budget, args.display, args.clss)
 
-def tracking(exp, clss):
+def tracking(exp, clss, display):
     sequence_dir = './result/original/%s.mp4' % exp
     detection_file = './result/detection/%s_FRCNN_DET_100000.npy' % exp
     output_file = './result/tracking/%s' % exp
-    min_confidence = 0.5
+    min_confidence = 0.7
     nms_max_overlap = 1.0
     min_detection_height = 0
-    max_cosine_distance = 0.4
+    max_cosine_distance = 0.6
     nn_budget=None
-    display=True
     run(
         sequence_dir, detection_file, output_file,
         min_confidence, nms_max_overlap, min_detection_height,

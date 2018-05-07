@@ -8,6 +8,7 @@ import pdb
 import tensorflow as tf
 from skimage.transform import resize
 from scipy.spatial.distance import cdist
+from sklearn.utils.linear_assignment_ import linear_assignment
 import sys
 sys.path.insert(0, "/home/hxw/frameworks/models/research/object_detection")
 from utils import visualization_utils as vis_util
@@ -101,11 +102,11 @@ def write_tracks_on_image(image, box, display_str):
         font=font)
 
 def reid(exp1, exp2, vis=True):
-    exp1_person_features_npy = './demo/' + exp1 + '_features_person.npy'
-    exp1_bin_features_npy = './demo/' + exp1 + '_features_bin.npy'
+    exp1_person_features_npy = './result/tracking/' + exp1 + '_features_person.npy'
+    exp1_bin_features_npy = './result/tracking/' + exp1 + '_features_bin.npy'
 
-    exp2_person_features_npy = './demo/' + exp2 + '_features_person.npy'
-    exp2_bin_features_npy = './demo/' + exp2 + '_features_bin.npy'
+    exp2_person_features_npy = './result/tracking/' + exp2 + '_features_person.npy'
+    exp2_bin_features_npy = './result/tracking/' + exp2 + '_features_bin.npy'
 
     # match person
     exp1_person_features = np.load(exp1_person_features_npy)
@@ -126,9 +127,29 @@ def reid(exp1, exp2, vis=True):
         for i2 in range(n_exp2):
             cls_dist_mat[i1, i2] = np.mean(dist_mat[exp1_ids==i1][:,exp2_ids==i2])
 
-    idx2_mapping = np.zeros(n_exp2)     
-    for i2 in range(n_exp2):
-        idx2_mapping[i2] = np.argmin(cls_dist_mat[:, i2])  
+    cam2_indices = np.array(range(cls_dist_mat.shape[-1])).astype(np.int32)  
+    unmatched = cam2_indices
+    matched = np.array([], dtype=np.int32)
+    idx2_mapping = np.zeros(len(cam2_indices))
+
+    MAXROUND=10
+    i = 0
+
+    pdb.set_trace()
+
+    while unmatched.any() and i<MAXROUND:
+        indices = linear_assignment(cls_dist_mat[:, unmatched].T)
+        matched = np.concatenate((matched, indices[:,0])) if matched.size else indices[:,0]
+        idx2_mapping[unmatched[indices[:,0]]] = indices[:,1]
+        unmatched = np.setdiff1d(cam2_indices, matched)
+        i += 1
+
+    for i in unmatched:
+        idx2_mapping[i] = np.argmin(cls_dist_mat[:, i])        
+
+    # idx2_mapping = np.zeros(n_exp2)     
+    # for i2 in range(n_exp2):
+    #     idx2_mapping[i2] = np.argmin(cls_dist_mat[:, i2])     
 
     idx1_mapping = np.array(range(n_exp1))    
 
@@ -138,16 +159,16 @@ def reid(exp1, exp2, vis=True):
 
     if vis:    
 
-        i1 = 250
-        i2 = 900
+        i1 = 1
+        i2 = 1
 
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        out = cv2.VideoWriter('./demo/' + exp1 + '_' + exp2 + '_XCamera_Matching.avi', fourcc, 50, (1920, 1080))
+        out = cv2.VideoWriter('./result/reid/' + exp1 + '_' + exp2 + '_XCamera_Matching.avi', fourcc, 50, (1920, 1080))
         
         # video 1
-        video_file1 = "demo/" + exp1 + ".mp4"
-        person_track_file1 = 'demo/' + exp1 + '_person.txt'
-        bin_track_file1 = 'demo/' + exp1 + '_bin.txt'
+        video_file1 = "result/original/" + exp1 + ".mp4"
+        person_track_file1 = 'result/tracking/' + exp1 + '_person.txt'
+        bin_track_file1 = 'result/tracking/' + exp1 + '_bin.txt'
 
         capture1 = cv2.VideoCapture(video_file1)
         capture1.set(1, i1)
@@ -157,9 +178,9 @@ def reid(exp1, exp2, vis=True):
 
         
         # video 2
-        video_file2 = "demo/" + exp2 + ".mp4"
-        person_track_file2 = 'demo/' + exp2 + '_person.txt'
-        bin_track_file2 = 'demo/' + exp2 + '_bin.txt'
+        video_file2 = "result/original/" + exp2 + ".mp4"
+        person_track_file2 = 'result/tracking/' + exp2 + '_person.txt'
+        bin_track_file2 = 'result/tracking/' + exp2 + '_bin.txt'
 
         capture2 = cv2.VideoCapture(video_file2)
         capture2.set(1, i2)
