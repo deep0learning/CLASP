@@ -33,14 +33,15 @@ def box_transform(rbbox, image_size):
     height = bottom - top
     return [left, top, width, height]
 
-def write_event_on_image(image, frame, ass, event_frames):
-    frdiff = frame-event_frames
+def write_event_on_image(image, frame, bin_person, event_frames):
     display_str = ''
     
-    for i, diff in zip(range(len(frdiff)), frdiff):
-        if abs(diff) < 30:
-            person = ass[i]
-            display_str += 'Person %d drops into Bin %d - \n' % (person+1, i)
+    for b in event_frames:
+        for fr in event_frames[b]:
+            diff = frame - fr
+            if 0 < diff < 30:
+                person = bin_person[b]
+                display_str += 'Person %d drops into Bin %d - \n' % (person, b)
 
     txtcolor = 'red'
     draw = ImageDraw.Draw(image)
@@ -63,18 +64,18 @@ def write_tracks_on_image(image, box, id, ass, clss):
     txtcolor = 'red'
     if clss == 'person':
         boxcolor = 'blue'
-        display_str = '%s %d ' % (clss, int(id) + 1)
+        display_str = '%s %d ' % (clss, int(id))
     elif clss == 'hand':
         boxcolor = 'red'
         display_str = '%s' % (clss)
         box = box_transform(box, [1080, 1920])
     else:
         boxcolor = 'green'
-        cass = np.zeros_like(ass)
-        for i in np.unique(ass):
-            subarray = np.where(ass == i)
-            cass[subarray[0]] = range(len(subarray[0]))       
-        display_str = 'person %d, bin %d'%(ass[int(id)] + 1, id)#cass[int(id)] + 1)
+        #cass = np.zeros_like(ass)
+        # for i in np.unique(ass):
+        #     subarray = np.where(ass == i)
+            #cass[subarray[0]] = range(len(subarray[0]))       
+        display_str = 'person %d, bin %d'%(ass[int(id)], id)#cass[int(id)] + 1)
     draw = ImageDraw.Draw(image)
 
     (left, right, top, bottom) = (box[0], box[0]+box[2], box[1], box[1]+box[3])
@@ -147,15 +148,15 @@ def detect_event(hand_boxes, bin_boxes):
         if current_bin_boxes.size > 0:    
             bin_boxes[bin_boxes[:,0] == fr] = current_bin_boxes
 
-    for b in range(len(bids)):
+    for b in bids:
         event_frames[b] = []
-        current_bin_boxes = bin_boxes[bin_boxes[:,1] == bids[b]]
+        current_bin_boxes = bin_boxes[bin_boxes[:,1] == b]
         # for i in range(1, len(current_bin_boxes)):
         #     if current_bin_boxes[i][-1] == 1 and current_bin_boxes[i-1][-1] == 0:
         #         event_frames[b] += [current_bin_boxes[i][0]]  
         valid_bin_boxes = current_bin_boxes[current_bin_boxes[:,-1] == 1]
         if valid_bin_boxes.size > 0:
-            event_frames[b] += [min(valid_bin_boxes[:,0])]   
+            event_frames[b] += [min(valid_bin_boxes[:,0])]        
 
     return event_frames
 
@@ -168,53 +169,58 @@ def write_tr_log(file, camid, fr, bb, id, pid, fromto, theft):
     print(log_str, file=file) 
 
 
-def associate(exps, startf=0, endf=100000, vis=False, fps=45.0):
+def associate(exps, source, startf=0, endf=100000, vis=False, fps=45.0):
     # write log
-    log_file = 'result/scoringTool/ATA_log_v2.txt'
+    log_file = 'result/scoringTool/ATA_log_v3.txt'
     if os.path.isfile(log_file):
         os.remove(log_file)
     f = open(log_file, 'a')
 
-    exp2cam = {'cam9exp5a': 9, 'cam11exp5a': 11, 'cam13exp5a': 13, 'cam2exp5a': 2, 'cam5exp5a': 5}
-    exp2type = {'cam9exp5a': 'to', 'cam2exp5a': 'to', 'cam5exp5a': 'from', 'cam11exp5a': 'from', 'cam13exp5a': 'from'}
+    exp2cam = {'cam9exp5a': 9, 'cam11exp5a': 11, 'cam13exp5a': 13, 'cam2exp5a': 2, 'cam5exp5a': 5, 'cam9exp5b': 9, 'cam11exp5b': 11, 'cam13exp5b': 13, 'cam2exp5b': 2, 'cam5exp5b': 5}
+    exp2type = {'cam9exp5a': 'to', 'cam2exp5a': 'to', 'cam5exp5a': 'from', 'cam11exp5a': 'from', 'cam13exp5a': 'from', 'cam9exp5b': 'to', 'cam2exp5b': 'to', 'cam5exp5b': 'from', 'cam11exp5b': 'from', 'cam13exp5b': 'from'}
 
     exps = exps.split(",")
+
+    person_boxes = {}
+    bin_boxes    = {}
+    hand_boxes   = {}
+    bin_person   = {}
+    event_frames = {}
+    first_person = {}
+    first_bin    = {}
+
     for exp in exps:
         print('>> associationg exp %s ...' % exp)
-
-        camid = exp2cam[exp]
-
-        video_file = "result/original/" + exp + ".mp4"
         person_track_file = 'result/tracking/' + exp + '_person.txt'
         bin_track_file = 'result/tracking/' + exp + '_bin.txt'
-        idmapping_file = 'result/reid/' + exp + '_idmapping_source_cam9exp5a.txt'
+        idmapping_file = 'result/reid/' + exp + '_idmapping_source_%s.txt' % source
         hand_det_file = 'result/detection/' + exp + '_FRCNN_DET_hand.npy'
 
         with open(idmapping_file) as idfile:
             content = idfile.readlines()  
         
         if os.path.isfile(person_track_file):
-            person_boxes = np.loadtxt(person_track_file, delimiter=',')
+            person_boxes[exp] = np.loadtxt(person_track_file, delimiter=',')
             pid_mapping = np.array(content[0].split(', ')).astype(int)
-            person_boxes[:,1] = pid_mapping[person_boxes[:,1].astype(int)]
-            pids = np.unique(person_boxes[:,1]).astype(int)
+            person_boxes[exp][:,1] = pid_mapping[person_boxes[exp][:,1].astype(int)]
+            pids = np.unique(person_boxes[exp][:,1]).astype(int)
         else:
-            person_boxes = np.array([])
+            person_boxes[exp] = np.array([])
             pids = np.array([])
 
         if os.path.isfile(bin_track_file):    
-            bin_boxes = np.loadtxt(bin_track_file, delimiter=',')
+            bin_boxes[exp] = np.loadtxt(bin_track_file, delimiter=',')
             bid_mapping = np.array(content[1].split(', ')).astype(int)
-            bin_boxes[:,1] = bid_mapping[bin_boxes[:,1].astype(int)]
-            bids = np.unique(bin_boxes[:,1]).astype(int)
+            bin_boxes[exp][:,1] = bid_mapping[bin_boxes[exp][:,1].astype(int)]
+            bids = np.unique(bin_boxes[exp][:,1]).astype(int)
         else:
-            bin_boxes = np.array([])
+            bin_boxes[exp] = np.array([])
             bids = np.array([])
 
-        hand_boxes = np.load(hand_det_file)[:,:6]
+        hand_boxes[exp] = np.load(hand_det_file)[:,:6]
         
-        if person_boxes.size and bin_boxes.size:
-            location_dist = location_matching(person_boxes, bin_boxes) 
+        if person_boxes[exp].size and bin_boxes[exp].size:
+            location_dist = location_matching(person_boxes[exp], bin_boxes[exp]) 
 
             bin_indices = np.array(range(len(bids)))  
             unmatched = bin_indices
@@ -234,46 +240,59 @@ def associate(exps, startf=0, endf=100000, vis=False, fps=45.0):
             for i in unmatched:
                 bin_ass[i] = np.argmin(location_dist[:, i]) 
 
-            out_text = './result/associate/' + exp + '_association_person.txt'
-            f2 = open(out_text, 'w')
-            tmp = [str(x) for x in bin_ass]
-            print(', '.join(tmp),file=f2)
-            f2.close()    
+            bin_person[exp] = {}
+            for bid in bids:
+                bin_person[exp][bid] = pids[int(bin_ass[int(np.argwhere(bids==bid))])]   
         
-        if hand_boxes.size and bin_boxes.size:
-            event_frames = detect_event(hand_boxes, bin_boxes)  
+        if hand_boxes[exp].size and bin_boxes[exp].size:
+            event_frames[exp] = detect_event(hand_boxes[exp], bin_boxes[exp])  
         else:
-            event_frames = {}        
+            event_frames[exp] = {}    
 
-        for fr in range(0, int(max(max(person_boxes[:,0]), max(bin_boxes[:,0]) if bin_boxes.size else 0))):
+        for bid in bids:
+            if bid in first_bin:
+                first_bin[bid] = min(first_bin[bid], min(bin_boxes[exp][:,0]))
+            else:
+                first_bin[bid] = min(bin_boxes[exp][:,0]) 
+
+        for pid in pids:
+            if pid in first_person:
+                first_person[pid] = min(first_person[pid], min(person_boxes[exp][:,0]))
+            else:
+                first_person[pid] = min(person_boxes[exp][:,0])               
+
+
+    for exp in exps:
+        camid = exp2cam[exp]
+
+        for fr in range(0, int(max(max(person_boxes[exp][:,0]), max(bin_boxes[exp][:,0]) if bin_boxes[exp].size else 0))):
             # check loc person
-            if person_boxes.size:
-                pboxes = person_boxes[person_boxes[:,0]==fr]
+            if person_boxes[exp].size:
+                pboxes = person_boxes[exp][person_boxes[exp][:,0]==fr]
 
             if pboxes.size:
                 for pbox in pboxes:
-                    write_loc_log(f, 'PAX',  camid, fr, pbox[2:6], pbox[1], pbox[1], 'false')        
+                    write_loc_log(f, 'PAX',  camid, fr, pbox[2:6], pbox[1], pbox[1], first_person[pbox[1]]==fr)        
 
             # check loc bin
-            if bin_boxes.size:
-                bboxes = bin_boxes[bin_boxes[:,0]==fr]
+            if bin_boxes[exp].size:
+                bboxes = bin_boxes[exp][bin_boxes[exp][:,0]==fr]
 
             if bboxes.size:
                 for bbox in bboxes:
-                    write_loc_log(f, 'DVI',  camid, fr, bbox[2:6], bbox[1], pids[int(bin_ass[int(np.argwhere(bids==bbox[1]))])], 'false')                
+                    write_loc_log(f, 'DVI',  camid, fr, bbox[2:6], bbox[1], bin_person[exp][bbox[1]], first_bin[bbox[1]]==fr)                
 
             # check transfer
-            bboxids = [b for b in event_frames if fr in event_frames[b]]
+            bboxids = [b for b in event_frames[exp] if fr in event_frames[exp][b]]
             if bboxids and fr != 0:
                 for bboxid in bboxids: 
                     bbox = bboxes[bboxes[:,1]==bboxid]
                     if bbox.size:
                         bbox = bbox[0]
-                        write_tr_log(f, camid, fr, bbox[2:6], bbox[1],  pids[int(bin_ass[int(np.argwhere(bids==bbox[1]))])], exp2type[exp], 'false')
-
-            print("%d frames logged." % fr)        
+                        write_tr_log(f, camid, fr, bbox[2:6], bbox[1], bin_person[exp][bbox[1]], exp2type[exp], bin_person[exp][bbox[1]]==bin_person[source][bbox[1]])      
         
         if vis:
+            video_file = "result/original/" + exp + ".mp4"
             capture = cv2.VideoCapture(video_file)
             capture.set(1, startf)
             fourcc = cv2.VideoWriter_fourcc(*'XVID')
@@ -288,23 +307,25 @@ def associate(exps, startf=0, endf=100000, vis=False, fps=45.0):
                 else: break
                 if i > endf: break
 
-                curr_person_boxes = person_boxes[person_boxes[:,0] == i]
-                curr_bin_boxes    = bin_boxes[bin_boxes[:,0] == i]
-                curr_hand_boxes    = hand_boxes[hand_boxes[:,0] == i]
+                curr_person_boxes = person_boxes[exp][person_boxes[exp][:,0] == i]
+                if bin_boxes[exp].size:
+                    curr_bin_boxes    = bin_boxes[exp][bin_boxes[exp][:,0] == i]
+                curr_hand_boxes   = hand_boxes[exp][hand_boxes[exp][:,0] == i]
 
                 image_np = write_tracks_on_image_array(
                     image,
                     curr_person_boxes[:,2:],
                     curr_person_boxes[:,1],
-                    bin_ass,
+                    bin_person[exp],
                     'person')
-
-                image_np = write_tracks_on_image_array(
-                    image,
-                    curr_bin_boxes[:,2:],
-                    curr_bin_boxes[:,1],
-                    bin_ass,
-                    'bin')
+                
+                if curr_bin_boxes.size:
+                    image_np = write_tracks_on_image_array(
+                        image,
+                        curr_bin_boxes[:,2:],
+                        curr_bin_boxes[:,1],
+                        bin_person[exp],
+                        'bin')
 
                 image_np = write_tracks_on_image_array(
                     image,
@@ -312,12 +333,13 @@ def associate(exps, startf=0, endf=100000, vis=False, fps=45.0):
                     curr_hand_boxes[:,1],
                     [],
                     'hand')
-
-                image_np = write_event_on_image(
-                    image,
-                    i,
-                    bin_ass,
-                    event_frames)
+                
+                if len(bin_person[exp].keys())>0 and len(event_frames[exp].keys())>0:
+                    image_np = write_event_on_image(
+                        image,
+                        i,
+                        bin_person[exp],
+                        event_frames[exp])
 
                 image_np = image_np[:,:,::-1]
                 out.write(image_np)
@@ -332,6 +354,9 @@ def parse_args():
         "--exps", help="Name of all cameras",
         default=None, required=True)
     parser.add_argument(
+        "--source_view", help="Name of source camera",
+        default=None, required=True)
+    parser.add_argument(
         "--vis", help="Generate videos or not",
         default=False, required=False)
 
@@ -340,4 +365,4 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    associate(args.exps, vis=(args.vis=='True'))           
+    associate(args.exps, args.source_view, vis=(args.vis=='True'))           

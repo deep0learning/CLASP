@@ -252,7 +252,7 @@ def parse_args():
     parser.add_argument(
         "--min_confidence", help="Detection confidence threshold. Disregard "
         "all detections that have a confidence lower than this value.",
-        default=0.7, type=float)
+        default=0.5, type=float)
     parser.add_argument(
         "--min_detection_height", help="Threshold on the detection bounding "
         "box height. Detections with height smaller than this value are "
@@ -290,7 +290,7 @@ def tracking(exp, clss, display):
     sequence_dir = './result/original/%s.mp4' % exp
     detection_file = './result/detection/%s_FRCNN_DET_100000.npy' % exp
     output_file = './result/tracking/%s' % exp
-    min_confidence = 0.7
+    min_confidence = 0.5
     nms_max_overlap = 1.0
     min_detection_height = 0
     max_cosine_distance = 0.6

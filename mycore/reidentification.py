@@ -39,18 +39,28 @@ def target_id_mapping(exp1_features, exp2_features, clss):
     exp2_ids = exp2_features[:,1]
 
     cls_dist_mat = np.ones([n_exp1, n_exp2]) * 1e8
+    cls_dist_mat_time = np.ones([n_exp1, n_exp2]) * 1e8
 
     for i1 in range(n_exp1):
         for i2 in range(n_exp2):
-            if abs(i1-i2) <= 4:
-                l1 = sum(exp1_features[:,1] == i1) // 2
-                l2 = sum(exp2_features[:,1] == i2) // 2
-                cls_dist_mat[i1, i2] = np.mean(dist_mat[exp1_ids==i1][-l1:,exp2_ids==i2][:, :l2])       
+            t1 = max(exp1_features[exp1_ids==i1][:,0])
+            t2 = min(exp2_features[exp2_ids==i2][:,0])
+            if abs(i1-i2) <= 2:
+            # if 0 < t2 - t1 < 1500:
+                l1 = sum(exp1_features[:,1] == i1) // 1
+                l2 = sum(exp2_features[:,1] == i2) // 1
+                cls_dist_mat[i1, i2] = np.mean(dist_mat[exp1_ids==i1][-l1:,exp2_ids==i2][:, :l2])
+
+
+            # if t1 < t2:
+            #     cls_dist_mat_time[i1, i2] = t2-t1   
+
+    # cls_dist_mat = cls_dist_mat*cls_dist_mat_time
 
     cam2_indices = np.array(range(cls_dist_mat.shape[-1])).astype(np.int32)  
+    target_id_mapping = np.zeros(len(cam2_indices))
     unmatched = cam2_indices
     matched = np.array([], dtype=np.int32)
-    target_id_mapping = np.zeros(len(cam2_indices))
 
     MAXROUND=10
     i = 0
@@ -87,7 +97,7 @@ def reid(source_view, exps):
         for i2 in range(n_source):
             source_cls_dist_mat[i1, i2] = np.mean(source_dist_mat[source_ids==i1][:,source_ids==i2])      
      
-    THR = 0.07
+    THR = 0.08
     source_pid_mapping = np.array(range(n_source)).astype(int)
     
     queue = range(n_source)
@@ -102,7 +112,7 @@ def reid(source_view, exps):
     
     source_bids = bin_features[source_view][:,1]
     n_source = len(np.unique(source_bids))
-    source_bid_mapping = np.array(range(n_source)).astype(int)  
+    source_bid_mapping = np.array(range(n_source)).astype(int)
     save_id_mapping(source_view, source_view, source_pid_mapping, source_bid_mapping)
 
 
