@@ -205,6 +205,7 @@ def main(_):
   num_examples = len(examples_list)
   num_train = int(1 * num_examples)
   train_examples = examples_list[:num_train]
+
   #val_examples = examples_list[num_train:]
   #logging.info('%d training and %d validation examples.',
   #             len(train_examples), len(val_examples))

@@ -129,7 +129,7 @@ class Visualization(object):
     def draw_trackers(self, tracks):
         self.viewer.thickness = 2
         for track in tracks:
-            if not track.is_confirmed() or track.time_since_update > 10:
+            if not track.is_confirmed() or track.time_since_update > 15:
                 continue
             self.viewer.color = create_unique_color_uchar(track.track_id)
             self.viewer.rectangle(

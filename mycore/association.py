@@ -156,7 +156,7 @@ def detect_event(hand_boxes, bin_boxes):
         #         event_frames[b] += [current_bin_boxes[i][0]]  
         valid_bin_boxes = current_bin_boxes[current_bin_boxes[:,-1] == 1]
         if valid_bin_boxes.size > 0:
-            event_frames[b] += [min(valid_bin_boxes[:,0])]        
+            event_frames[b] += [min(valid_bin_boxes[:,0])] # + (max(valid_bin_boxes[:,0]) - min(valid_bin_boxes[:,0]))//3]        
 
     return event_frames
 
@@ -171,7 +171,7 @@ def write_tr_log(file, camid, fr, bb, id, pid, fromto, theft):
 
 def associate(exps, source, startf=0, endf=100000, vis=False, fps=45.0):
     # write log
-    log_file = 'result/scoringTool/ATA_log_v3.txt'
+    log_file = 'result/scoringTool/ATA_log.txt'
     if os.path.isfile(log_file):
         os.remove(log_file)
     f = open(log_file, 'a')
@@ -189,7 +189,7 @@ def associate(exps, source, startf=0, endf=100000, vis=False, fps=45.0):
     first_person = {}
     first_bin    = {}
 
-    for exp in exps:
+    for exp in exps + [source] if source not in exps else exps:
         print('>> associationg exp %s ...' % exp)
         person_track_file = 'result/tracking/' + exp + '_person.txt'
         bin_track_file = 'result/tracking/' + exp + '_bin.txt'
@@ -269,6 +269,8 @@ def associate(exps, source, startf=0, endf=100000, vis=False, fps=45.0):
             # check loc person
             if person_boxes[exp].size:
                 pboxes = person_boxes[exp][person_boxes[exp][:,0]==fr]
+            else:
+                pboxes = np.array([])    
 
             if pboxes.size:
                 for pbox in pboxes:
@@ -277,6 +279,8 @@ def associate(exps, source, startf=0, endf=100000, vis=False, fps=45.0):
             # check loc bin
             if bin_boxes[exp].size:
                 bboxes = bin_boxes[exp][bin_boxes[exp][:,0]==fr]
+            else:
+                bboxes = np.array([])    
 
             if bboxes.size:
                 for bbox in bboxes:
@@ -310,13 +314,16 @@ def associate(exps, source, startf=0, endf=100000, vis=False, fps=45.0):
                 curr_person_boxes = person_boxes[exp][person_boxes[exp][:,0] == i]
                 if bin_boxes[exp].size:
                     curr_bin_boxes    = bin_boxes[exp][bin_boxes[exp][:,0] == i]
+                else:
+                    curr_bin_boxes = np.array([])
+
                 curr_hand_boxes   = hand_boxes[exp][hand_boxes[exp][:,0] == i]
 
                 image_np = write_tracks_on_image_array(
                     image,
                     curr_person_boxes[:,2:],
                     curr_person_boxes[:,1],
-                    bin_person[exp],
+                    bin_person[exp] if exp in bin_person else {},
                     'person')
                 
                 if curr_bin_boxes.size:
@@ -324,7 +331,7 @@ def associate(exps, source, startf=0, endf=100000, vis=False, fps=45.0):
                         image,
                         curr_bin_boxes[:,2:],
                         curr_bin_boxes[:,1],
-                        bin_person[exp],
+                        bin_person[exp] if exp in bin_person else {},
                         'bin')
 
                 image_np = write_tracks_on_image_array(
@@ -333,13 +340,12 @@ def associate(exps, source, startf=0, endf=100000, vis=False, fps=45.0):
                     curr_hand_boxes[:,1],
                     [],
                     'hand')
-                
-                if len(bin_person[exp].keys())>0 and len(event_frames[exp].keys())>0:
-                    image_np = write_event_on_image(
-                        image,
-                        i,
-                        bin_person[exp],
-                        event_frames[exp])
+                if exp in bin_person and len(bin_person[exp].keys())>0 and len(event_frames[exp].keys())>0:
+                        image_np = write_event_on_image(
+                            image,
+                            i,
+                            bin_person[exp],
+                            event_frames[exp])
 
                 image_np = image_np[:,:,::-1]
                 out.write(image_np)
