@@ -43,6 +43,6 @@ The system implemented here contains 5 functional modules:
 ## Usage
 
 - Preliminary: `tensorflow 1.4`, `numpy`, `cv2 (opencv)`
-- Download pre-trained models at [here](https://drive.google.com/drive/folders/10a4OjGeumilISq97FOiNr6hRdmlPSFgt)
-- Put your videos in `result/original/`, e.g. cam1.mp4, cam2.mp4
+- Download pre-trained models at [here](https://drive.google.com/drive/folders/10a4OjGeumilISq97FOiNr6hRdmlPSFgt) indo `models/`
+- Put your videos in `result/original/`, e.g. cam1.mp4, cam2.mp4, ...
 - Pass the video names in `run_pipeline.sh` and run it
