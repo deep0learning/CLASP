@@ -37,7 +37,7 @@ The system implemented here contains 5 functional modules:
 
 * multi camera videos sequences
 <p align="left">
-<a href="https://drive.google.com/open?id=1T40Kl1qLExqeD9QQeWGsMyMCFYsImAR2" target="_blank"><img src="./mdsrc/multi.png" height="250" border="10" /></a>
+<a href="https://drive.google.com/open?id=1FFcTx_0osdfndut8y2jDsV4IAyNKgwWm" target="_blank"><img src="./mdsrc/multi.png" height="250" border="10" /></a>
 </p>
 
 ## Usage
